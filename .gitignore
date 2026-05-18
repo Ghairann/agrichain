@@ -1,0 +1,33 @@
+# ─── Secrets & environment ───────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Hardhat build artifacts ─────────────────────────────────────────────────
+artifacts/
+cache/
+typechain/
+typechain-types/
+coverage/
+coverage.json
+
+# ─── Node dependencies ────────────────────────────────────────────────────────
+node_modules/
+
+# ─── Frontend build output ───────────────────────────────────────────────────
+frontend/dist/
+frontend/node_modules/
+frontend/.env.local
+frontend/.env.*.local
+
+# ─── OS & editor junk ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# ─── Claude Code internal files ───────────────────────────────────────────────
+.claude/
+
+# ─── Hardhat flat compilation output (if generated) ─────────────────────────
+flattened.sol
