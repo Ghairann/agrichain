@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage.jsx'
 import Header from './components/Header.jsx'
 import Toast from './components/Toast.jsx'
 import Spinner from './components/Spinner.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 import AdminDashboard from './dashboards/AdminDashboard.jsx'
 import PetaniDashboard from './dashboards/PetaniDashboard.jsx'
 import AuditorDashboard from './dashboards/AuditorDashboard.jsx'
@@ -132,13 +133,15 @@ function AppShell({ onReset }) {
   )
 
   const getDashboard = () => {
+    let dash
     switch (userInfo.role) {
-      case ROLE.Admin:       return <AdminDashboard />
-      case ROLE.Petani:      return <PetaniDashboard />
-      case ROLE.Auditor:     return <AuditorDashboard />
-      case ROLE.Distributor: return <DistributorDashboard />
+      case ROLE.Admin:       dash = <AdminDashboard />;       break
+      case ROLE.Petani:      dash = <PetaniDashboard />;      break
+      case ROLE.Auditor:     dash = <AuditorDashboard />;     break
+      case ROLE.Distributor: dash = <DistributorDashboard />; break
       default:               return <NotRegistered account={account} />
     }
+    return <ErrorBoundary key={userInfo.role}>{dash}</ErrorBoundary>
   }
 
   return (

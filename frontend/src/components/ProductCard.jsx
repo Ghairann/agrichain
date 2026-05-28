@@ -1,9 +1,13 @@
 import { ethers } from 'ethers'
 import { MapPin, Weight, Leaf, Wallet, Eye } from 'lucide-react'
+import { STATUS } from '../constants.js'
 import StatusBadge from './StatusBadge.jsx'
 
 export default function ProductCard({ product, onTrace, children }) {
   const p = product
+  const belumAdaHarga = p.hargaWei === 0n || p.hargaWei == null
+  const isMenunggu = Number(p.status) === STATUS.MenungguAudit
+
   return (
     <div className="card p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-start justify-between gap-2">
@@ -37,10 +41,16 @@ export default function ProductCard({ product, onTrace, children }) {
           <span className="truncate">{p.metode}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Wallet size={13} className="text-amber-500 shrink-0" />
-          <span className="font-semibold text-amber-600">
-            {ethers.formatEther(p.hargaWei)} ETH
-          </span>
+          <Wallet size={13} className={`shrink-0 ${belumAdaHarga ? 'text-slate-400' : 'text-amber-500'}`} />
+          {belumAdaHarga ? (
+            <span className={`text-xs ${isMenunggu ? 'text-yellow-600 font-medium' : 'text-slate-400'}`}>
+              {isMenunggu ? 'Menunggu audit' : 'Belum ditetapkan'}
+            </span>
+          ) : (
+            <span className="font-semibold text-amber-600">
+              {ethers.formatEther(p.hargaWei)} ETH
+            </span>
+          )}
         </div>
       </div>
 

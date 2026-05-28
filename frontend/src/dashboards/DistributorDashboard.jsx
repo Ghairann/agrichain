@@ -8,7 +8,7 @@ import TraceabilityModal from '../components/TraceabilityModal.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
 import Spinner from '../components/Spinner.jsx'
 import BalanceCard, { StatCard } from '../components/BalanceCard.jsx'
-import { formatEth } from '../utils.js'
+import { formatEth, mapProduct } from '../utils.js'
 
 
 function BuyModal({ product, onClose, onConfirm, loading }) {
@@ -70,7 +70,8 @@ export default function DistributorDashboard() {
     setLoading(true)
     try {
       const total = Number(await contract.totalProduk())
-      const all = await Promise.all(Array.from({ length: total }, (_, i) => contract.getProduk(i + 1)))
+      const raw = await Promise.all(Array.from({ length: total }, (_, i) => contract.getProduk(i + 1)))
+      const all = raw.map(mapProduct).filter(Boolean)
 
       const escrows = await Promise.all(all.map(p => contract.getEscrow(p.id)))
       const em = {}
@@ -85,7 +86,6 @@ export default function DistributorDashboard() {
         bm[p.id.toString()] = buyer
       }))
 
-      // Compute this distributor's locked escrow and total ETH spent
       let locked = 0n
       let spent = 0n
       for (const p of transitOrSold) {
@@ -110,6 +110,7 @@ export default function DistributorDashboard() {
 
   useEffect(() => { loadProducts() }, [loadProducts])
 
+  // Only show Terverifikasi products — explicitly excludes Ditolak and all other statuses
   const available = products.filter(p => Number(p.status) === STATUS.Terverifikasi)
   const myPurchases = products.filter(p =>
     (Number(p.status) === STATUS.DalamPengiriman || Number(p.status) === STATUS.Terjual) &&
@@ -144,7 +145,6 @@ export default function DistributorDashboard() {
         </button>
       </div>
 
-      {/* Wallet balance */}
       <BalanceCard />
 
       {/* Stats */}

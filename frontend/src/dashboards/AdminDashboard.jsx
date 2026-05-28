@@ -6,7 +6,7 @@ import { ROLE_LABEL } from '../constants.js'
 import RoleBadge from '../components/RoleBadge.jsx'
 import Spinner from '../components/Spinner.jsx'
 import BalanceCard, { StatCard } from '../components/BalanceCard.jsx'
-import { formatEth } from '../utils.js'
+import { formatEth, mapProduct } from '../utils.js'
 import { STATUS } from '../constants.js'
 
 export default function AdminDashboard() {
@@ -37,9 +37,10 @@ export default function AdminDashboard() {
       let escrowLocked = 0n
       let released = 0n
       if (total > 0) {
-        const allProducts = await Promise.all(
+        const rawProducts = await Promise.all(
           Array.from({ length: total }, (_, i) => contract.getProduk(i + 1))
         )
+        const allProducts = rawProducts.map(mapProduct).filter(Boolean)
         for (const p of allProducts) {
           if (Number(p.status) === STATUS.DalamPengiriman) {
             const e = await contract.getEscrow(p.id)

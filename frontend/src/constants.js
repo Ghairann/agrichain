@@ -7,11 +7,12 @@ export const ROLE = {
 }
 
 export const STATUS = {
-  Didaftarkan: 0,
-  Terverifikasi: 1,
+  MenungguAudit:   0,
+  Terverifikasi:   1,
   DalamPengiriman: 2,
-  DiDistributor: 3,
-  Terjual: 4,
+  DiDistributor:   3,
+  Terjual:         4,
+  Ditolak:         5,
 }
 
 export const ROLE_LABEL = {
@@ -23,11 +24,12 @@ export const ROLE_LABEL = {
 }
 
 export const STATUS_LABEL = {
-  0: 'Didaftarkan',
+  0: 'Menunggu Audit',
   1: 'Terverifikasi',
   2: 'Dalam Pengiriman',
   3: 'Di Distributor',
   4: 'Terjual',
+  5: 'Ditolak',
 }
 
 export const ROLE_COLOR = {
@@ -39,19 +41,21 @@ export const ROLE_COLOR = {
 }
 
 export const STATUS_COLOR = {
-  0: 'bg-slate-100 text-slate-600',
+  0: 'bg-yellow-100 text-yellow-700',
   1: 'bg-blue-100 text-blue-700',
   2: 'bg-amber-100 text-amber-700',
   3: 'bg-violet-100 text-violet-700',
   4: 'bg-green-100 text-green-700',
+  5: 'bg-red-100 text-red-700',
 }
 
 export const STATUS_ICON = {
-  0: '📋',
+  0: '⏳',
   1: '✅',
   2: '🚚',
   3: '🏭',
   4: '💰',
+  5: '❌',
 }
 
 export const ROLE_EMOJI = {
