@@ -6,7 +6,7 @@ contract AgriChain {
     enum Role { TidakTerdaftar, Petani, Auditor, Distributor, Admin }
     enum Status {
         MenungguAudit,   // 0 - Baru didaftarkan, menunggu auditor
-        Terverifikasi,   // 1 - Diverifikasi auditor, harga ditetapkan, siap dijual
+        Terverifikasi,   // 1 - Diverifikasi auditor + harga ditetapkan, siap dijual
         DalamPengiriman, // 2 - ETH terkunci di escrow
         DiDistributor,   // 3 - (legacy, tidak digunakan)
         Terjual,         // 4 - ETH dicairkan ke petani
@@ -27,9 +27,8 @@ contract AgriChain {
         string metode;
         address petani;
         Status status;
-        uint256 hargaWei;            // Harga aktif untuk transaksi (= hargaFinalAuditor setelah verifikasi)
-        uint256 hargaFinalAuditor;   // Harga yang ditetapkan auditor
-        address auditorPenentuHarga; // Auditor yang menetapkan harga
+        uint256 hargaFinalAuditor;
+        address auditorPenentuHarga;
     }
 
     struct Riwayat {
@@ -90,7 +89,7 @@ contract AgriChain {
         emit PenggunaTerdaftar(_alamat, _nama, _role);
     }
 
-    // ── DAFTARKAN PRODUK (tanpa harga — auditor yang menetapkan) ──
+    // ── DAFTARKAN PRODUK (harga ditetapkan oleh auditor saat verifikasi) ─
     function daftarkanProduk(
         string memory _nama,
         string memory _lokasi,
@@ -103,9 +102,8 @@ contract AgriChain {
         produk[totalProduk] = Produk(
             totalProduk, _nama, _lokasi, _berat, _metode, msg.sender,
             Status.MenungguAudit,
-            0,           // hargaWei — belum ditetapkan
-            0,           // hargaFinalAuditor — belum ditetapkan
-            address(0)   // auditorPenentuHarga — belum ada
+            0,
+            address(0)
         );
         riwayat[totalProduk].push(Riwayat(
             block.timestamp, msg.sender, Status.MenungguAudit,
@@ -115,22 +113,20 @@ contract AgriChain {
         return totalProduk;
     }
 
-    // ── VERIFIKASI DAN TENTUKAN HARGA (auditor) ───────────
+    // ── VERIFIKASI + TETAPKAN HARGA (auditor) ────────────
     function verifikasiDanTentukanHarga(
         uint256 _id,
         uint256 _hargaFinal,
         string memory _catatan
     ) public hanyaAuditor {
         require(produk[_id].status == Status.MenungguAudit, "AgriChain: Harus berstatus MenungguAudit");
-        require(_hargaFinal > 0, "AgriChain: Harga final harus > 0");
-
+        require(_hargaFinal > 0, "AgriChain: Harga harus > 0");
         produk[_id].hargaFinalAuditor = _hargaFinal;
-        produk[_id].hargaWei = _hargaFinal;
         produk[_id].auditorPenentuHarga = msg.sender;
         produk[_id].status = Status.Terverifikasi;
         riwayat[_id].push(Riwayat(
             block.timestamp, msg.sender, Status.Terverifikasi,
-            _catatan
+            bytes(_catatan).length > 0 ? _catatan : "Terverifikasi"
         ));
         emit ProdukDiverifikasi(_id, msg.sender, _hargaFinal);
     }
@@ -148,7 +144,7 @@ contract AgriChain {
     function beliProduk(uint256 _id) public payable hanyaDistributor {
         require(produk[_id].status == Status.Terverifikasi, "AgriChain: Produk harus berstatus Terverifikasi");
         require(escrow[_id] == 0, "AgriChain: Sudah ada escrow aktif untuk produk ini");
-        require(msg.value == produk[_id].hargaWei, "AgriChain: Nilai ETH tidak sesuai harga produk");
+        require(msg.value == produk[_id].hargaFinalAuditor, "AgriChain: Nilai ETH tidak sesuai harga produk");
         escrow[_id] = msg.value;
         pembeli[_id] = msg.sender;
         produk[_id].status = Status.DalamPengiriman;
@@ -159,7 +155,7 @@ contract AgriChain {
         emit ETHDikunci(_id, msg.sender, msg.value);
     }
 
-    // ── ESCROW: KONFIRMASI PENERIMAAN ─────────────────────
+    // ── ESCROW: KONFIRMASI PENERIMAAN (auditor) ───────────
     function konfirmasiPenerimaan(uint256 _id, string memory _catatan) public hanyaAuditor {
         require(escrow[_id] > 0, "AgriChain: Tidak ada escrow aktif untuk produk ini");
         uint256 nilai = escrow[_id];
@@ -172,7 +168,7 @@ contract AgriChain {
         emit ETHDicairkan(_id, petaniAddr, nilai);
     }
 
-    // ── ESCROW: TOLAK PENGIRIMAN ──────────────────────────
+    // ── ESCROW: TOLAK PENGIRIMAN (auditor) ────────────────
     function tolakPengiriman(uint256 _id, string memory _alasan) public hanyaAuditor {
         require(escrow[_id] > 0, "AgriChain: Tidak ada escrow aktif untuk produk ini");
         uint256 nilai = escrow[_id];

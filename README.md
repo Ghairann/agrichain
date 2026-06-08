@@ -59,7 +59,7 @@
 
 ---
 
-## ⚡ Quick Start (60 Detik)
+## ⚡ Quick Start (Ringkasan)
 
 ```bash
 # 1. Clone repository
@@ -86,10 +86,12 @@ npm run deploy:local
 cd frontend && npm run dev
 ```
 
-**Setup MetaMask:**
+**Setup MetaMask (setelah 3 terminal berjalan):**
 - Tambah network: **Hardhat Localhost**, RPC `http://127.0.0.1:8545`, Chain ID `31337`
-- Import **Account #0** (dari output Hardhat node) sebagai Admin
-- Buka **http://localhost:3000**, masukkan alamat kontrak dari output deploy
+- Import akun-akun di bawah menggunakan private key (lihat [Tabel Akun Hardhat](#tabel-akun-hardhat--private-key-siap-pakai))
+- Buka **http://localhost:3000**
+
+> **Tutorial lengkap & troubleshooting** → lihat [Bagian 6](#6--tutorial-lengkap-panduan-replikasi)
 
 ---
 
@@ -110,10 +112,11 @@ cd frontend && npm run dev
 <td valign="top">
 
 **Operasional**
-- [6. Environment Setup](#6--environment-setup)
-- [7. Pengujian](#7--pengujian)
-- [8. MVP Scope](#8--mvp-scope)
-- [9. Best Practices & Security](#9--best-practices--security)
+- [6. Tutorial Lengkap (Panduan Replikasi)](#6--tutorial-lengkap-panduan-replikasi)
+- [7. Environment Setup (Referensi)](#7--environment-setup-referensi)
+- [8. Pengujian](#8--pengujian)
+- [9. MVP Scope](#9--mvp-scope)
+- [10. Best Practices & Security](#10--best-practices--security)
 - [Annex A — References](#annex-a--references)
 - [Annex B — Glossary](#annex-b--glossary)
 
@@ -753,7 +756,436 @@ Panduan langkah demi langkah untuk presentasi AgriChain dari awal hingga ETH cai
 
 ---
 
-## 6. ⚙️ Environment Setup
+## 6. 📖 Tutorial Lengkap (Panduan Replikasi)
+
+> Bagian ini ditujukan untuk kelompok lain yang ingin menjalankan AgriChain dari awal di laptop masing-masing. Ikuti setiap langkah secara berurutan.
+
+---
+
+### Langkah 1 — Persiapan Software
+
+Pastikan semua software berikut sudah terinstall sebelum memulai:
+
+<table>
+<tr><th>Software</th><th>Versi Minimum</th><th>Cara Cek</th><th>Link Download</th></tr>
+<tr><td><b>Node.js</b></td><td>v18.0+</td><td><code>node --version</code></td><td>https://nodejs.org (pilih LTS)</td></tr>
+<tr><td><b>npm</b></td><td>v9.0+</td><td><code>npm --version</code></td><td>Sudah termasuk di Node.js</td></tr>
+<tr><td><b>Git</b></td><td>v2.0+</td><td><code>git --version</code></td><td>https://git-scm.com</td></tr>
+<tr><td><b>MetaMask</b></td><td>Terbaru</td><td>Cek di browser extensions</td><td>https://metamask.io (pilih ekstensi Chrome/Firefox)</td></tr>
+<tr><td><b>Browser</b></td><td>Chrome / Firefox / Brave</td><td>—</td><td>—</td></tr>
+</table>
+
+> **Catatan:** MetaMask harus diinstall sebagai ekstensi browser, bukan aplikasi desktop.
+
+---
+
+### Langkah 2 — Clone & Install Dependensi
+
+Buka terminal (Command Prompt / PowerShell / Git Bash), lalu jalankan:
+
+```bash
+# Clone repository
+git clone <url-repository-agrichain>
+cd agrichain
+
+# Install dependensi root (Hardhat, ethers, dll.)
+npm install
+
+# Install dependensi frontend (React, Vite, Tailwind, dll.)
+cd frontend
+npm install
+cd ..
+```
+
+Pastikan tidak ada error merah. Warning kuning bisa diabaikan.
+
+---
+
+### Langkah 3 — Setup MetaMask
+
+#### 3a. Buat atau Buka MetaMask
+
+Jika belum punya akun MetaMask, buat baru dan simpan seed phrase dengan aman. Jika sudah punya, buka MetaMask di browser.
+
+#### 3b. Tambah Network Hardhat Localhost
+
+1. Buka MetaMask → klik nama network di pojok kiri atas (biasanya tertulis "Ethereum Mainnet")
+2. Klik **"Add network"** → **"Add a network manually"**
+3. Isi form dengan data berikut:
+
+<table>
+<tr><th>Field</th><th>Nilai yang Diisi</th></tr>
+<tr><td><b>Network name</b></td><td><code>Hardhat Localhost</code></td></tr>
+<tr><td><b>New RPC URL</b></td><td><code>http://127.0.0.1:8545</code></td></tr>
+<tr><td><b>Chain ID</b></td><td><code>31337</code></td></tr>
+<tr><td><b>Currency symbol</b></td><td><code>ETH</code></td></tr>
+<tr><td><b>Block explorer URL</b></td><td>(kosongkan)</td></tr>
+</table>
+
+4. Klik **Save** → MetaMask akan otomatis pindah ke network Hardhat Localhost
+
+> **Penting:** Network ini hanya aktif saat Hardhat Node sedang berjalan (Langkah 4). Jika Hardhat Node dimatikan, koneksi akan gagal — ini normal.
+
+#### 3c. Import Akun Hardhat ke MetaMask
+
+Akun-akun Hardhat bersifat **deterministik** — private key-nya selalu sama di semua laptop, sehingga bisa langsung di-copas dari tabel di bawah.
+
+> ⚠️ **Akun-akun ini HANYA untuk keperluan development/demo lokal. Jangan gunakan private key ini untuk menyimpan aset nyata.**
+
+##### Tabel Akun Hardhat — Private Key Siap Pakai
+
+<table>
+<tr>
+  <th>#</th>
+  <th>Role dalam Demo</th>
+  <th>Nama dalam Aplikasi</th>
+  <th>Address</th>
+  <th>Private Key</th>
+</tr>
+<tr>
+  <td><b>0</b></td>
+  <td>⚙️ Admin</td>
+  <td>Admin AgriChain</td>
+  <td><code>0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</code></td>
+  <td><code>0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80</code></td>
+</tr>
+<tr>
+  <td><b>1</b></td>
+  <td>🌾 Petani 1</td>
+  <td>Pak Budi Santoso</td>
+  <td><code>0x70997970C51812dc3A010C7d01b50e0d17dc79C8</code></td>
+  <td><code>0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d</code></td>
+</tr>
+<tr>
+  <td><b>2</b></td>
+  <td>🔍 Auditor</td>
+  <td>Dinas Pertanian Malang</td>
+  <td><code>0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC</code></td>
+  <td><code>0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a</code></td>
+</tr>
+<tr>
+  <td><b>3</b></td>
+  <td>🚛 Distributor 1</td>
+  <td>PT Agro Nusantara</td>
+  <td><code>0x90F79bf6EB2c4f870365E785982E1f101E93b906</code></td>
+  <td><code>0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6</code></td>
+</tr>
+<tr>
+  <td><b>4</b></td>
+  <td>🌾 Petani 2</td>
+  <td>Bu Sri Wahyuni</td>
+  <td><code>0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65</code></td>
+  <td><code>0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926b</code></td>
+</tr>
+<tr>
+  <td><b>5</b></td>
+  <td>🚛 Distributor 2</td>
+  <td>CV Berkah Pangan</td>
+  <td><code>0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc</code></td>
+  <td><code>0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba</code></td>
+</tr>
+</table>
+
+##### Cara Import Akun ke MetaMask (per akun):
+
+1. Buka MetaMask → klik ikon lingkaran akun di pojok kanan atas
+2. Pilih **"Add account or hardware wallet"**
+3. Pilih **"Import account"**
+4. Pilih **"Private Key"** pada dropdown Type
+5. Paste private key dari tabel di atas (dengan atau tanpa awalan `0x`)
+6. Klik **Import**
+7. Ulangi untuk semua 6 akun
+
+Setelah import, MetaMask akan menampilkan akun dengan nama default seperti "Account 2", "Account 3", dst. Anda bisa rename masing-masing akun agar lebih mudah dikenali:
+- Klik titik tiga `⋮` di samping nama akun → **"Edit account"** → ubah nama sesuai rolenya
+
+---
+
+### Langkah 4 — Jalankan Hardhat Node
+
+Buka **Terminal 1** (jangan ditutup selama menggunakan aplikasi):
+
+```bash
+npx hardhat node
+```
+
+Output yang muncul akan seperti ini:
+
+```
+Started HTTP and WebSocket JSON-RPC server at http://127.0.0.1:8545/
+
+Accounts
+========
+Account #0: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (10000 ETH)
+Private Key: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+Account #1: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 (10000 ETH)
+Private Key: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+...
+```
+
+> **Biarkan terminal ini tetap terbuka.** Hardhat Node adalah blockchain lokal yang harus terus berjalan.
+
+---
+
+### Langkah 5 — Deploy Smart Contract
+
+Buka **Terminal 2** (baru, jangan tutup Terminal 1):
+
+```bash
+npm run deploy:local
+```
+
+Output yang muncul:
+
+```
+=====================================================
+  AgriChain — Deploy & Demo
+=====================================================
+
+Deployer (Admin) : 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+Balance Admin    : 10000.0 ETH
+
+Deploying AgriChain...
+Contract deployed: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+
+--- 1. Registrasi Peserta Blockchain ---
+  ┌─────────────────────┬──────────────────────────────┬────────────────────────────────────────────┐
+  │ Role                │ Nama                         │ Address                                    │
+  ├─────────────────────┼──────────────────────────────┼────────────────────────────────────────────┤
+  │ Admin (Owner)       │ Admin AgriChain              │ 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 │
+  │ Petani              │ Pak Budi Santoso             │ 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 │
+  │ Auditor             │ Dinas Pertanian Malang       │ 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC │
+  │ Distributor         │ PT Agro Nusantara            │ 0x90F79bf6EB2c4f870365E785982E1f101E93b906 │
+  │ Petani              │ Bu Sri Wahyuni               │ 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65 │
+  │ Distributor         │ CV Berkah Pangan             │ 0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc │
+  └─────────────────────┴──────────────────────────────┴────────────────────────────────────────────┘
+
+...
+
+Contract Address   : 0x5FbDB2315678afecb367f032d93F642f64180aa3
+
+frontend/.env.local diperbarui: .../frontend/.env.local
+```
+
+> **Catatan penting:** Contract Address yang muncul di terminal Anda mungkin berbeda dari contoh di atas — itu normal. Yang penting adalah file `frontend/.env.local` **otomatis diperbarui** dengan address yang benar.
+
+---
+
+### Langkah 6 — Jalankan Frontend
+
+Buka **Terminal 3** (baru):
+
+```bash
+cd frontend
+npm run dev
+```
+
+Output:
+
+```
+  VITE v5.x.x  ready in xxx ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+```
+
+Buka browser dan akses **http://localhost:3000**
+
+---
+
+### Langkah 7 — Penggunaan Aplikasi per Role
+
+#### 7a. Masuk sebagai Admin
+
+1. Di MetaMask, pilih **Account #0** (Admin AgriChain)
+2. Pastikan network aktif adalah **Hardhat Localhost**
+3. Di halaman http://localhost:3000, klik **"Connect Wallet"**
+4. MetaMask akan meminta konfirmasi koneksi → klik **Connect**
+5. Aplikasi otomatis mendeteksi role Admin dan menampilkan **Admin Dashboard**
+
+**Yang bisa dilakukan Admin:**
+- Melihat statistik platform (total produk, pengguna terdaftar, total escrow)
+- Mendaftarkan pengguna baru dengan mengisi:
+  - **Alamat Wallet** — address Ethereum akun yang ingin didaftarkan
+  - **Nama** — nama pengguna/perusahaan
+  - **Role** — pilih Petani, Auditor, atau Distributor
+- Klik **"Daftarkan"** → MetaMask akan muncul untuk konfirmasi transaksi → klik **Confirm**
+
+> **Catatan:** Saat menjalankan `npm run deploy:local`, semua 6 akun sudah otomatis terdaftar oleh script. Admin tidak perlu mendaftarkan ulang.
+
+---
+
+#### 7b. Masuk sebagai Petani
+
+1. Di MetaMask, switch ke **Account #1** (Pak Budi Santoso) atau **Account #4** (Bu Sri Wahyuni)
+2. Refresh halaman jika perlu, atau tunggu aplikasi mendeteksi perubahan akun
+3. Aplikasi akan menampilkan **Petani Dashboard**
+
+**Cara mendaftarkan produk baru:**
+1. Di Petani Dashboard, klik tombol **"Daftarkan Produk"** atau **"Tambah Produk"**
+2. Isi form:
+   - **Nama Produk** — contoh: `Beras Organik Premium`
+   - **Lokasi** — contoh: `Sumbermanjing Wetan, Malang`
+   - **Berat (kg)** — contoh: `500`
+   - **Metode Tanam** — contoh: `Organik - Tanpa Pestisida`
+3. Klik **"Daftarkan"** → konfirmasi di MetaMask → klik **Confirm**
+4. Produk muncul di daftar dengan status **"Menunggu Audit"** dan harga belum ditetapkan
+
+**Yang bisa dilihat Petani:**
+- Daftar semua produk miliknya beserta status terkini
+- Riwayat lengkap setiap produk (klik tombol riwayat/detail)
+- Saldo ETH di wallet (bertambah saat escrow cair)
+
+---
+
+#### 7c. Masuk sebagai Auditor
+
+1. Di MetaMask, switch ke **Account #2** (Dinas Pertanian Malang)
+2. Aplikasi akan menampilkan **Auditor Dashboard**
+
+**Cara verifikasi produk dan tetapkan harga:**
+1. Di Auditor Dashboard, lihat daftar produk berstatus **"Menunggu Audit"**
+2. Klik tombol **"Verifikasi"** pada produk yang ingin diverifikasi
+3. Isi form verifikasi:
+   - **Harga (ETH)** — contoh: `0.05` (ini adalah harga jual yang harus dibayar distributor)
+   - **Catatan** — contoh: `Lulus uji lab - bebas residu pestisida`
+4. Klik **"Verifikasi & Tetapkan Harga"** → konfirmasi di MetaMask → klik **Confirm**
+5. Status produk berubah menjadi **"Terverifikasi"** dengan harga yang sudah ditetapkan
+
+**Cara menolak produk:**
+1. Klik tombol **"Tolak"** pada produk yang tidak lolos standar
+2. Isi alasan penolakan — contoh: `Ditemukan residu pestisida kelas B`
+3. Klik **"Tolak Produk"** → konfirmasi di MetaMask → klik **Confirm**
+4. Status produk berubah menjadi **"Ditolak"** — produk ini tidak bisa dibeli
+
+**Cara konfirmasi penerimaan produk (setelah distributor membeli):**
+1. Lihat daftar produk berstatus **"Dalam Pengiriman"**
+2. Klik tombol **"Konfirmasi Penerimaan"**
+3. Isi catatan — contoh: `Diterima dalam kondisi baik di gudang Surabaya`
+4. Klik **"Konfirmasi"** → konfirmasi di MetaMask → klik **Confirm**
+5. ETH escrow otomatis cair ke wallet petani; status menjadi **"Terjual"**
+
+**Cara menolak pengiriman (refund ke distributor):**
+1. Lihat daftar produk berstatus **"Dalam Pengiriman"**
+2. Klik tombol **"Tolak Pengiriman"**
+3. Isi alasan — contoh: `Kualitas tidak sesuai saat diterima`
+4. Klik **"Tolak Pengiriman"** → konfirmasi di MetaMask → klik **Confirm**
+5. ETH dikembalikan ke distributor; status produk kembali ke **"Terverifikasi"** (bisa dibeli lagi)
+
+---
+
+#### 7d. Masuk sebagai Distributor
+
+1. Di MetaMask, switch ke **Account #3** (PT Agro Nusantara) atau **Account #5** (CV Berkah Pangan)
+2. Aplikasi akan menampilkan **Distributor Dashboard**
+
+**Cara membeli produk:**
+1. Di Distributor Dashboard, lihat daftar produk berstatus **"Terverifikasi"**
+2. Perhatikan harga yang tertera (ditetapkan oleh auditor)
+3. Klik tombol **"Beli Produk"**
+4. MetaMask akan muncul dengan nilai ETH yang sudah terisi otomatis sesuai harga produk
+5. Pastikan saldo ETH di wallet cukup
+6. Klik **Confirm** di MetaMask
+7. Status produk berubah menjadi **"Dalam Pengiriman"**; ETH terkunci di escrow smart contract
+
+**Yang bisa dilihat Distributor:**
+- Daftar produk yang tersedia untuk dibeli (status Terverifikasi)
+- Produk yang sedang dalam pengiriman (escrow aktif)
+- Riwayat pembelian
+
+---
+
+### Langkah 8 — Melihat Riwayat Produk (Traceability)
+
+Setiap pengguna (semua role) dapat melihat riwayat lengkap suatu produk:
+
+1. Pada kartu produk manapun, klik tombol **"Riwayat"** atau **"Detail"** (ikon jam / daftar)
+2. Modal akan terbuka menampilkan timeline lengkap:
+   - Waktu setiap kejadian
+   - Siapa pelakunya (address wallet)
+   - Status produk saat itu
+   - Keterangan/catatan
+
+Contoh riwayat produk yang lengkap (4 langkah):
+```
+[1] MenungguAudit  — Produk didaftarkan, menunggu audit         (oleh: Petani)
+[2] Terverifikasi  — Lulus uji lab - bebas residu pestisida     (oleh: Auditor)
+[3] DalamPengiriman— Dibeli - ETH dikunci di escrow             (oleh: Distributor)
+[4] Terjual        — Diterima dalam kondisi baik di gudang      (oleh: Auditor)
+```
+
+---
+
+### Langkah 9 — Reset & Mulai Ulang (jika diperlukan)
+
+Jika ingin membersihkan semua data dan mulai dari awal:
+
+1. Hentikan semua terminal (Ctrl+C di masing-masing terminal)
+2. Jalankan ulang dari **Langkah 4** (Terminal 1: `npx hardhat node`)
+3. Jalankan ulang **Langkah 5** (Terminal 2: `npm run deploy:local`)
+4. Di MetaMask, **reset akun** untuk menghapus nonce cache:
+   - Buka MetaMask → Settings → Advanced → **"Clear activity and nonce data"**
+   - Lakukan untuk setiap akun yang digunakan
+5. Jalankan ulang frontend (Terminal 3)
+
+> **Mengapa perlu reset MetaMask?** Saat Hardhat Node direstart, blockchain dimulai dari blok 0. MetaMask menyimpan nonce transaksi lama yang menyebabkan transaksi baru gagal jika tidak direset.
+
+---
+
+### Troubleshooting — Masalah Umum
+
+<table>
+<tr>
+  <th>Masalah</th>
+  <th>Penyebab</th>
+  <th>Solusi</th>
+</tr>
+<tr>
+  <td><b>Halaman kosong / "Contract not found"</b></td>
+  <td>File <code>frontend/.env.local</code> belum ada atau address kontrak salah</td>
+  <td>Jalankan ulang <code>npm run deploy:local</code> — file akan diperbarui otomatis</td>
+</tr>
+<tr>
+  <td><b>MetaMask tidak muncul saat klik tombol</b></td>
+  <td>Ekstensi MetaMask tidak terdeteksi</td>
+  <td>Pastikan MetaMask terinstall dan tidak di-disable di browser. Coba refresh halaman</td>
+</tr>
+<tr>
+  <td><b>"Nonce too high" atau transaksi pending terus</b></td>
+  <td>Hardhat Node direstart, nonce MetaMask tidak sinkron</td>
+  <td>MetaMask → Settings → Advanced → "Clear activity and nonce data" untuk akun tersebut</td>
+</tr>
+<tr>
+  <td><b>"Wrong network" atau tombol merah di header</b></td>
+  <td>MetaMask terhubung ke network selain Hardhat Localhost</td>
+  <td>Switch network di MetaMask ke "Hardhat Localhost" (Chain ID 31337)</td>
+</tr>
+<tr>
+  <td><b>"Pengguna tidak terdaftar" di dashboard</b></td>
+  <td>Akun yang digunakan belum terdaftar di kontrak</td>
+  <td>Pastikan menggunakan salah satu dari 6 akun di tabel. Jika deploy ulang, jalankan <code>npm run deploy:local</code> lagi</td>
+</tr>
+<tr>
+  <td><b>Error "insufficient funds"</b></td>
+  <td>Saldo ETH di akun habis</td>
+  <td>Ini tidak mungkin terjadi untuk akun Hardhat (#0–#5) karena masing-masing punya 10.000 ETH. Pastikan menggunakan private key yang benar</td>
+</tr>
+<tr>
+  <td><b>Frontend tidak bisa connect ke RPC</b></td>
+  <td>Hardhat Node belum dijalankan atau sudah mati</td>
+  <td>Pastikan Terminal 1 (<code>npx hardhat node</code>) masih berjalan</td>
+</tr>
+<tr>
+  <td><b><code>npm install</code> gagal</b></td>
+  <td>Versi Node.js terlalu lama</td>
+  <td>Update Node.js ke versi 18+ dari nodejs.org</td>
+</tr>
+</table>
+
+---
+
+## 7. ⚙️ Environment Setup (Referensi)
 
 ### Prerequisites
 
@@ -765,30 +1197,23 @@ Panduan langkah demi langkah untuk presentasi AgriChain dari awal hingga ETH cai
 <tr><td>Git</td><td>v2.0+</td><td><code>git --version</code></td><td>git-scm.com</td></tr>
 </table>
 
-### Install Dependensi
+### Scripts npm yang Tersedia
 
 ```bash
-# Root (Hardhat + tooling)
-npm install
+# Compile smart contract
+npm run compile
 
-# Frontend (React + ethers.js + Tailwind)
-cd frontend && npm install && cd ..
-```
+# Jalankan unit test (53 test)
+npm test
 
-### Menjalankan Hardhat Node & Deploy
-
-```bash
-# Terminal 1: Jalankan Hardhat EVM lokal
+# Jalankan Hardhat local node
 npx hardhat node
-# Output: 20 akun test dengan masing-masing 10000 ETH, RPC http://127.0.0.1:8545
 
-# Terminal 2: Compile & deploy ke localhost
+# Deploy ke Hardhat localhost (sekaligus update frontend/.env.local)
 npm run deploy:local
-# Output: alamat kontrak + ringkasan deployment + frontend/.env.local diperbarui otomatis
 
-# Terminal 3: Jalankan frontend
-cd frontend && npm run dev
-# Output: server berjalan di http://localhost:3000
+# Deploy ke Sepolia testnet (butuh .env dengan SEPOLIA_RPC_URL & PRIVATE_KEY)
+npm run deploy:sepolia
 ```
 
 ### Environment Variables
@@ -807,29 +1232,6 @@ VITE_CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
 
 > **Catatan:** File `.env` dan `frontend/.env.local` sudah ada di `.gitignore`. Jangan commit file ini ke repository.
 
-### Setup MetaMask
-
-<table>
-<tr><th>Field</th><th>Nilai</th></tr>
-<tr><td><b>Network Name</b></td><td>Hardhat Localhost</td></tr>
-<tr><td><b>RPC URL</b></td><td><code>http://127.0.0.1:8545</code></td></tr>
-<tr><td><b>Chain ID</b></td><td><code>31337</code></td></tr>
-<tr><td><b>Currency Symbol</b></td><td>ETH</td></tr>
-<tr><td><b>Block Explorer URL</b></td><td>(kosongkan)</td></tr>
-</table>
-
-### Import Akun Test dari Hardhat
-
-Salin private key dari output `npx hardhat node` dan import ke MetaMask (Accounts → Import Account):
-
-<table>
-<tr><th>Akun Hardhat</th><th>Role Demo</th><th>Nama Demo</th></tr>
-<tr><td>Account #0</td><td>⚙️ Admin</td><td>Admin AgriChain (deployer — sudah otomatis terdaftar)</td></tr>
-<tr><td>Account #1</td><td>🌾 Petani</td><td>Pak Budi Santoso</td></tr>
-<tr><td>Account #2</td><td>🔍 Auditor</td><td>Dinas Pertanian Malang</td></tr>
-<tr><td>Account #3</td><td>🚛 Distributor</td><td>PT Agro Nusantara</td></tr>
-</table>
-
 ### Deploy ke Sepolia Testnet (Opsional)
 
 ```bash
@@ -842,7 +1244,7 @@ npm run verify:sepolia <CONTRACT_ADDRESS>
 
 ---
 
-## 7. 🧪 Pengujian
+## 8. 🧪 Pengujian
 
 ### Menjalankan Test
 
@@ -880,7 +1282,7 @@ npm run test:all
 
 ---
 
-## 8. 📦 MVP Scope
+## 9. 📦 MVP Scope
 
 ### Priority Matrix
 
@@ -957,7 +1359,7 @@ npm run test:all
 
 ---
 
-## 9. 🔒 Best Practices & Security
+## 10. 🔒 Best Practices & Security
 
 ### Security Notes
 
@@ -1076,6 +1478,18 @@ npm run test:all
 <tr>
   <td><b>Modifier</b></td>
   <td>Dekorator fungsi di Solidity yang menambahkan kondisi akses sebelum kode fungsi dieksekusi; digunakan untuk role-based access control di AgriChain</td>
+</tr>
+<tr>
+  <td><b>Private Key</b></td>
+  <td>Kunci rahasia berupa string hexadecimal 64 karakter yang digunakan untuk menandatangani transaksi. Siapapun yang memiliki private key dapat mengontrol wallet tersebut sepenuhnya</td>
+</tr>
+<tr>
+  <td><b>Nonce</b></td>
+  <td>Angka urut transaksi pada suatu alamat. MetaMask menyimpan nonce secara lokal; jika Hardhat Node direstart, nonce harus direset agar sinkron</td>
+</tr>
+<tr>
+  <td><b>Deterministik</b></td>
+  <td>Dalam konteks Hardhat: akun yang dihasilkan selalu sama setiap kali node dijalankan — address dan private key tidak berubah, sehingga bisa di-hardcode di tutorial</td>
 </tr>
 </table>
 

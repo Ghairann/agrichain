@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
-import { RefreshCw, CheckCircle, XCircle, ClipboardCheck, AlertTriangle, Tag, ShieldCheck } from 'lucide-react'
+import { RefreshCw, CheckCircle, XCircle, ClipboardCheck, AlertTriangle } from 'lucide-react'
 import { useWeb3 } from '../context/Web3Context.jsx'
 import { STATUS } from '../constants.js'
 import ProductCard from '../components/ProductCard.jsx'
@@ -9,21 +9,11 @@ import Spinner from '../components/Spinner.jsx'
 import BalanceCard, { StatCard } from '../components/BalanceCard.jsx'
 import { formatEth, mapProduct } from '../utils.js'
 
-function shortAddr(addr) {
-  if (!addr || addr === ethers.ZeroAddress) return '—'
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`
-}
-
 function VerifyModal({ product, onClose, onConfirm, loading }) {
-  const [catatan, setCatatan]     = useState('')
-  const [hargaInput, setHargaInput] = useState('')
+  const [catatan, setCatatan] = useState('')
+  const [harga, setHarga] = useState('')
 
-  const handleSubmit = () => {
-    let hargaFinalWei
-    try { hargaFinalWei = ethers.parseEther(hargaInput.trim()) } catch { return }
-    if (hargaFinalWei <= 0n) return
-    onConfirm(hargaFinalWei, catatan)
-  }
+  const canSubmit = harga.trim() !== '' && parseFloat(harga) > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -33,7 +23,6 @@ function VerifyModal({ product, onClose, onConfirm, loading }) {
           <strong>{product.nama}</strong> — #{product.id.toString()}
         </p>
 
-        {/* Product details */}
         <div className="bg-slate-50 rounded-xl p-3 mb-4 text-xs text-slate-600 space-y-1.5">
           <div className="flex justify-between">
             <span>Lokasi</span><span className="font-medium">{product.lokasi}</span>
@@ -44,28 +33,20 @@ function VerifyModal({ product, onClose, onConfirm, loading }) {
           <div className="flex justify-between">
             <span>Metode</span><span className="font-medium">{product.metode}</span>
           </div>
-          <div className="flex justify-between">
-            <span>Petani</span><span className="font-mono">{shortAddr(product.petani)}</span>
-          </div>
         </div>
 
-        {/* Final price input */}
-        <div className="mb-4">
-          <label className="label">Harga Jual Final (ETH) *</label>
-          <input
-            className="input"
-            type="number"
-            step="0.001"
-            min="0.001"
-            value={hargaInput}
-            onChange={e => setHargaInput(e.target.value)}
-            placeholder="0.05"
-            autoFocus
-          />
-          <p className="text-xs text-slate-400 mt-1">
-            Harga ini akan menjadi harga penjualan resmi — distributor membeli dengan harga ini.
-          </p>
-        </div>
+        <label className="label">Harga Jual Final (ETH) *</label>
+        <input
+          className="input mb-3"
+          type="number"
+          step="0.001"
+          min="0.001"
+          placeholder="0.05"
+          value={harga}
+          onChange={e => setHarga(e.target.value)}
+          autoFocus
+        />
+        <p className="text-xs text-slate-400 -mt-2 mb-3">Harga ini akan digunakan sebagai nilai escrow saat distributor membeli.</p>
 
         <label className="label">Catatan Verifikasi</label>
         <textarea
@@ -78,12 +59,12 @@ function VerifyModal({ product, onClose, onConfirm, loading }) {
         <div className="flex gap-3 mt-4">
           <button onClick={onClose} className="btn-secondary flex-1">Batal</button>
           <button
-            onClick={handleSubmit}
-            disabled={loading || !hargaInput.trim() || Number(hargaInput) <= 0}
+            onClick={() => onConfirm(harga, catatan)}
+            disabled={loading || !canSubmit}
             className="btn-primary flex-1"
           >
             {loading && <Spinner size={14} />}
-            <Tag size={14} />
+            <ClipboardCheck size={14} />
             Verifikasi & Tetapkan Harga
           </button>
         </div>
@@ -145,9 +126,9 @@ function ActionModal({ product, mode, onClose, onConfirm, loading }) {
 
 export default function AuditorDashboard() {
   const { contract, send, showToast, refreshBalance } = useWeb3()
-  const [products, setProducts]     = useState([])
-  const [loading, setLoading]       = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [products, setProducts]         = useState([])
+  const [loading, setLoading]           = useState(false)
+  const [submitting, setSubmitting]     = useState(false)
   const [traceProduct, setTraceProduct] = useState(null)
   const [verifyModal, setVerifyModal]   = useState(null)
   const [actionModal, setActionModal]   = useState(null)
@@ -170,7 +151,7 @@ export default function AuditorDashboard() {
           const e = await contract.getEscrow(p.id)
           locked += e
         }
-        if (Number(p.status) === STATUS.Terjual) released += p.hargaWei
+        if (Number(p.status) === STATUS.Terjual) released += p.hargaFinalAuditor
       }
 
       setProducts(all)
@@ -182,7 +163,7 @@ export default function AuditorDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [contract])
+  }, [contract, showToast])
 
   useEffect(() => { loadProducts() }, [loadProducts])
 
@@ -191,13 +172,20 @@ export default function AuditorDashboard() {
   const rejected  = products.filter(p => Number(p.status) === STATUS.Ditolak)
   const inTransit = products.filter(p => Number(p.status) === STATUS.DalamPengiriman)
 
-  const handleVerify = async (hargaFinalWei, catatan) => {
+  const handleVerify = async (hargaStr, catatan) => {
     if (!verifyModal) return
+    let hargaWei
+    try {
+      hargaWei = ethers.parseEther(hargaStr.trim())
+      if (hargaWei <= 0n) throw new Error()
+    } catch {
+      return
+    }
     setSubmitting(true)
     const ok = await send(
       contract.verifikasiDanTentukanHarga,
       verifyModal.id,
-      hargaFinalWei,
+      hargaWei,
       catatan || 'Terverifikasi'
     )
     if (ok) { setVerifyModal(null); loadProducts(); refreshBalance() }
@@ -208,9 +196,9 @@ export default function AuditorDashboard() {
     const { product, mode } = actionModal
     setSubmitting(true)
     let ok = false
-    if (mode === 'reject-verify')   ok = await send(contract.tolakProduk,          product.id, catatan)
-    if (mode === 'confirm')         ok = await send(contract.konfirmasiPenerimaan,  product.id, catatan || 'Diterima')
-    if (mode === 'reject-delivery') ok = await send(contract.tolakPengiriman,       product.id, catatan)
+    if (mode === 'reject-verify')   ok = await send(contract.tolakProduk,         product.id, catatan)
+    if (mode === 'confirm')         ok = await send(contract.konfirmasiPenerimaan, product.id, catatan || 'Diterima')
+    if (mode === 'reject-delivery') ok = await send(contract.tolakPengiriman,      product.id, catatan)
     if (ok) { setActionModal(null); loadProducts(); refreshBalance() }
     setSubmitting(false)
   }
@@ -222,8 +210,8 @@ export default function AuditorDashboard() {
     { id: 'shipping', label: 'Pengiriman',     count: inTransit.length, color: 'text-amber-600'  },
   ]
 
-  const tabProducts    = { pending, verified, rejected, shipping: inTransit }
-  const displayed      = tabProducts[activeTab] || []
+  const tabProducts = { pending, verified, rejected, shipping: inTransit }
+  const displayed   = tabProducts[activeTab] || []
 
   const emptyMessages = {
     pending:  { icon: '🎉', text: 'Tidak ada produk yang menunggu audit' },
@@ -237,7 +225,7 @@ export default function AuditorDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800">Dashboard Auditor 🔍</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Verifikasi produk, tetapkan harga jual, dan kelola escrow</p>
+          <p className="text-sm text-slate-500 mt-0.5">Verifikasi produk dan kelola escrow</p>
         </div>
         <button onClick={() => { loadProducts(); refreshBalance() }} disabled={loading} className="btn-secondary text-sm py-2">
           {loading ? <Spinner size={14} /> : <RefreshCw size={14} />} Refresh
@@ -266,7 +254,6 @@ export default function AuditorDashboard() {
         />
       </div>
 
-      {/* Audit queue alert */}
       {pending.length > 0 && activeTab !== 'pending' && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 flex gap-3 items-center">
           <span className="text-yellow-600 font-semibold text-sm">
@@ -314,15 +301,13 @@ export default function AuditorDashboard() {
                   </button>
                 </div>
               )}
-              {/* Verified product — show auditor price */}
+              {/* Verified: show auditor-set price */}
               {activeTab === 'verified' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs space-y-1.5">
-                  <p className="font-semibold text-blue-700 flex items-center gap-1">
-                    <ShieldCheck size={12} /> Harga Ditetapkan Auditor
-                  </p>
+                  <p className="font-semibold text-blue-700">Harga Jual (ditetapkan auditor)</p>
                   <div className="flex justify-between text-blue-700 font-bold">
-                    <span>Harga Jual</span>
-                    <span>{ethers.formatEther(p.hargaFinalAuditor ?? p.hargaWei)} ETH</span>
+                    <span>Harga</span>
+                    <span>{ethers.formatEther(p.hargaFinalAuditor)} ETH</span>
                   </div>
                 </div>
               )}
@@ -331,7 +316,7 @@ export default function AuditorDashboard() {
                 <div className="space-y-2">
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs flex justify-between">
                     <span className="text-amber-600">Harga Escrow</span>
-                    <span className="font-bold text-amber-700">{ethers.formatEther(p.hargaWei)} ETH</span>
+                    <span className="font-bold text-amber-700">{ethers.formatEther(p.hargaFinalAuditor)} ETH</span>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setActionModal({ product: p, mode: 'confirm' })}

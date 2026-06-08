@@ -5,7 +5,7 @@ import StatusBadge from './StatusBadge.jsx'
 
 export default function ProductCard({ product, onTrace, children }) {
   const p = product
-  const belumAdaHarga = p.hargaWei === 0n || p.hargaWei == null
+  const belumAdaHarga = p.hargaFinalAuditor === 0n || p.hargaFinalAuditor == null
   const isMenunggu = Number(p.status) === STATUS.MenungguAudit
 
   return (
@@ -48,7 +48,7 @@ export default function ProductCard({ product, onTrace, children }) {
             </span>
           ) : (
             <span className="font-semibold text-amber-600">
-              {ethers.formatEther(p.hargaWei)} ETH
+              {ethers.formatEther(p.hargaFinalAuditor)} ETH
             </span>
           )}
         </div>

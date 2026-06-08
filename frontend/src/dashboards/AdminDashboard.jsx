@@ -47,7 +47,7 @@ export default function AdminDashboard() {
             escrowLocked += e
           }
           if (Number(p.status) === STATUS.Terjual) {
-            released += p.hargaWei
+            released += p.hargaFinalAuditor
           }
         }
       }

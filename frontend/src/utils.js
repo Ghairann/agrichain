@@ -10,16 +10,15 @@ export function mapProduct(raw) {
   if (!raw) return null
   try {
     return {
-      id:                   raw.id                   ?? 0n,
-      nama:                 raw.nama                 ?? '',
-      lokasi:               raw.lokasi               ?? '',
-      berat:                raw.berat                ?? 0n,
-      metode:               raw.metode               ?? '',
-      petani:               raw.petani               ?? ethers.ZeroAddress,
-      status:               raw.status               ?? 0n,
-      hargaWei:             raw.hargaWei             ?? 0n,
-      hargaFinalAuditor:    raw.hargaFinalAuditor    ?? 0n,
-      auditorPenentuHarga:  raw.auditorPenentuHarga  ?? ethers.ZeroAddress,
+      id:                  raw.id                  ?? 0n,
+      nama:                raw.nama                ?? '',
+      lokasi:              raw.lokasi              ?? '',
+      berat:               raw.berat               ?? 0n,
+      metode:              raw.metode              ?? '',
+      petani:              raw.petani              ?? ethers.ZeroAddress,
+      status:              raw.status              ?? 0n,
+      hargaFinalAuditor:   raw.hargaFinalAuditor   ?? 0n,
+      auditorPenentuHarga: raw.auditorPenentuHarga ?? ethers.ZeroAddress,
     }
   } catch (err) {
     console.warn('[mapProduct] ABI decode error — stale contract or ABI mismatch:', err.message)

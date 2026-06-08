@@ -12,7 +12,7 @@ import { formatEth, mapProduct } from '../utils.js'
 
 
 function BuyModal({ product, onClose, onConfirm, loading }) {
-  const price = ethers.formatEther(product.hargaWei)
+  const price = ethers.formatEther(product.hargaFinalAuditor)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-slide-up">
@@ -92,7 +92,7 @@ export default function DistributorDashboard() {
         const buyer = bm[p.id.toString()]
         if (buyer?.toLowerCase() !== account?.toLowerCase()) continue
         if (Number(p.status) === STATUS.DalamPengiriman) locked += em[p.id.toString()] || 0n
-        if (Number(p.status) === STATUS.Terjual) spent += p.hargaWei
+        if (Number(p.status) === STATUS.Terjual) spent += p.hargaFinalAuditor
       }
 
       setProducts(all)
@@ -121,7 +121,7 @@ export default function DistributorDashboard() {
     if (!buyModal) return
     setSubmitting(true)
     const p = buyModal
-    const ok = await send(contract.beliProduk, p.id, { value: p.hargaWei })
+    const ok = await send(contract.beliProduk, p.id, { value: p.hargaFinalAuditor })
     if (ok) { setBuyModal(null); loadProducts(); refreshBalance() }
     setSubmitting(false)
   }
@@ -212,7 +212,7 @@ export default function DistributorDashboard() {
             <ProductCard key={p.id.toString()} product={p} onTrace={setTraceProduct}>
               {activeTab === 'available' ? (
                 <button onClick={() => setBuyModal(p)} className="btn-amber w-full justify-center text-sm">
-                  <ShoppingCart size={15} /> Beli — {ethers.formatEther(p.hargaWei)} ETH
+                  <ShoppingCart size={15} /> Beli — {ethers.formatEther(p.hargaFinalAuditor)} ETH
                 </button>
               ) : (
                 <div className="flex items-center gap-2">

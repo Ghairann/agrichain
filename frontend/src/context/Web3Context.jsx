@@ -7,6 +7,18 @@ const Web3Context = createContext(null)
 
 const LOCALHOST_CHAIN_BIGINT = 31337n
 
+// Verify a contract is actually deployed (bytecode exists) and that
+// the ABI's getPengguna selector is present in the deployed code.
+async function verifyContract(provider, address) {
+  const code = await provider.getCode(address)
+  if (code === '0x') {
+    throw Object.assign(
+      new Error('Kontrak tidak ditemukan di alamat ini. Jalankan "npm run deploy:local" lalu refresh.'),
+      { _agriCode: 'CONTRACT_NOT_DEPLOYED' },
+    )
+  }
+}
+
 export function Web3Provider({ children, contractAddress }) {
   const [account, setAccount]         = useState(null)
   const [provider, setProvider]       = useState(null)
@@ -18,10 +30,8 @@ export function Web3Provider({ children, contractAddress }) {
   const [connecting, setConnecting]   = useState(false)
   const [toast, setToast]             = useState(null)
 
-  // Tracks whether the user has actively connected this session.
   const connectedRef = useRef(false)
-  // Keep latest provider in a ref for use inside callbacks without stale closure.
-  const providerRef = useRef(null)
+  const providerRef  = useRef(null)
 
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type, id: Date.now() })
@@ -34,7 +44,8 @@ export function Web3Provider({ children, contractAddress }) {
     try {
       const info = await ct.getPengguna(addr)
       setUserInfo({ nama: info.nama, role: Number(info.role), aktif: info.aktif })
-    } catch {
+    } catch (err) {
+      console.warn('[AgriChain] getPengguna failed in loadUserInfo:', err.code ?? err.message)
       setUserInfo({ nama: '', role: 0, aktif: false })
     }
   }, [])
@@ -60,7 +71,6 @@ export function Web3Provider({ children, contractAddress }) {
     setEthBalance(null)
   }, [])
 
-  // Explicit user-gesture connect — never called automatically.
   const connect = useCallback(async () => {
     if (!window.ethereum) {
       showToast('MetaMask tidak ditemukan. Pasang MetaMask terlebih dahulu.', 'error')
@@ -82,7 +92,6 @@ export function Web3Provider({ children, contractAddress }) {
           })
         } catch (switchErr) {
           if (switchErr.code === 4902) {
-            // Chain not yet added in MetaMask — add Hardhat Localhost
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
               params: [LOCALHOST_NETWORK],
@@ -98,14 +107,29 @@ export function Web3Provider({ children, contractAddress }) {
       const _signer = await _provider.getSigner()
       const _addr   = await _signer.getAddress()
 
-      // Step 4: contract instance
+      // Step 4: verify contract bytecode exists on-chain before any ABI call
+      await verifyContract(_provider, contractAddress.trim())
+
+      // Step 5: contract instance
       const _contract = new ethers.Contract(contractAddress.trim(), ABI, _signer)
 
-      // Step 5: validate contract by calling getPengguna
-      const info = await _contract.getPengguna(_addr)
-      const role = Number(info.role)
+      // Step 6: fetch user info gracefully — not registered is OK, not an error
+      let info = { nama: '', role: 0, aktif: false }
+      try {
+        const raw = await _contract.getPengguna(_addr)
+        info = { nama: raw.nama, role: Number(raw.role), aktif: raw.aktif }
+      } catch (err) {
+        // BAD_DATA here means ABI mismatch or wrong contract — warn but do not block
+        console.warn('[AgriChain] getPengguna returned unexpected data:', err.code ?? err.message)
+        if (err.code === 'BAD_DATA') {
+          showToast(
+            'ABI tidak cocok dengan kontrak. Deploy ulang atau perbarui alamat kontrak.',
+            'error',
+          )
+        }
+      }
 
-      // Step 6: commit all state atomically
+      // Step 7: commit state atomically
       const { chainId: confirmedChainId } = await _provider.getNetwork()
       providerRef.current = _provider
       setProvider(_provider)
@@ -113,23 +137,33 @@ export function Web3Provider({ children, contractAddress }) {
       setAccount(_addr)
       setChainId(confirmedChainId.toString())
       setContract(_contract)
-      setUserInfo({ nama: info.nama, role, aktif: info.aktif })
+      setUserInfo(info)
       connectedRef.current = true
-      showToast('Wallet terhubung ke Hardhat Localhost!', 'success')
 
-      // Fetch initial ETH balance
+      console.log('[AgriChain] connected', {
+        chainId: confirmedChainId.toString(),
+        contract: contractAddress,
+        wallet: _addr,
+        role: info.role,
+        abiLength: ABI.length,
+      })
+
+      showToast('Wallet terhubung ke Hardhat Localhost!', 'success')
       fetchBalance(_provider, _addr)
     } catch (err) {
       console.error('[AgriChain] connect error:', err)
 
-      // Friendly message for common localhost errors
-      let msg = err.reason || err.data?.message || err.message || 'Gagal menghubungkan wallet'
-      if (msg.includes('could not detect network') || msg.includes('network does not support')) {
+      let msg = err.message || 'Gagal menghubungkan wallet'
+
+      if (err._agriCode === 'CONTRACT_NOT_DEPLOYED') {
+        msg = err.message
+      } else if (msg.includes('could not detect network') || msg.includes('network does not support')) {
         msg = 'Tidak dapat terhubung ke Hardhat node. Pastikan "npm run node" sudah berjalan.'
       } else if (msg.includes('BAD_DATA') || msg.includes('CALL_EXCEPTION')) {
-        msg = 'Kontrak tidak ditemukan di jaringan ini. Pastikan sudah deploy dan alamat kontrak benar.'
+        msg = 'Kontrak tidak cocok. Jalankan "npx hardhat clean && npx hardhat compile && npm run deploy:local" lalu refresh.'
       }
-      showToast(msg.slice(0, 150), 'error')
+
+      showToast(msg.slice(0, 180), 'error')
     } finally {
       setConnecting(false)
     }
@@ -139,14 +173,35 @@ export function Web3Provider({ children, contractAddress }) {
     if (contract && account) await loadUserInfo(contract, account)
   }, [contract, account, loadUserInfo])
 
-  // Refresh wallet ETH balance on demand (call after transactions)
   const refreshBalance = useCallback(async () => {
     if (providerRef.current && account) {
       await fetchBalance(providerRef.current, account)
     }
   }, [account, fetchBalance])
 
-  // MetaMask event listeners — registered once, never torn down.
+  // Detect Hardhat node restart: block number drops back near zero while connected.
+  useEffect(() => {
+    if (!provider || !connectedRef.current) return
+    let lastBlock = -1
+    const id = setInterval(async () => {
+      try {
+        const block = await provider.getBlockNumber()
+        if (lastBlock > 5 && block <= 1) {
+          disconnect()
+          showToast(
+            'Hardhat node diulang ulang. Deploy kontrak lagi lalu hubungkan kembali.',
+            'info',
+          )
+        }
+        lastBlock = block
+      } catch {
+        // provider gone — MetaMask event will handle disconnect
+      }
+    }, 4000)
+    return () => clearInterval(id)
+  }, [provider, disconnect, showToast])
+
+  // MetaMask event listeners
   useEffect(() => {
     if (!window.ethereum) return
 
@@ -181,7 +236,6 @@ export function Web3Provider({ children, contractAddress }) {
       showToast('Transaksi dikirim, menunggu konfirmasi…', 'info')
       await tx.wait()
       showToast('Transaksi berhasil!', 'success')
-      // Refresh balance after every successful transaction
       if (providerRef.current && account) {
         fetchBalance(providerRef.current, account)
       }

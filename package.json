@@ -5,11 +5,17 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "test:full": "hardhat run scripts/test-full.js",
+    "test:full:local": "hardhat run scripts/test-full.js --network localhost",
+    "test:all": "hardhat test && hardhat run scripts/test-full.js",
     "node": "hardhat node",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:sepolia": "hardhat run scripts/deploy-sepolia.js --network sepolia",
     "verify:sepolia": "hardhat verify --network sepolia",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "dev": "cd frontend && npm run dev",
+    "dev:all": "powershell -ExecutionPolicy Bypass -File scripts/run-dev.ps1",
+    "dev:all:notests": "powershell -ExecutionPolicy Bypass -File scripts/run-dev.ps1 -SkipTests"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",
