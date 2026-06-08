@@ -691,7 +691,7 @@ Panduan langkah demi langkah untuk presentasi AgriChain dari awal hingga ETH cai
 <tr>
   <td><b>1</b></td>
   <td>Account #0 (Admin)</td>
-  <td>Jalankan <code>npm run deploy:local</code></td>
+  <td>Jalankan <code> npx hardhat run scripts/deploy.js --network localhost   </code></td>
   <td>Kontrak ter-deploy, alamat kontrak muncul di terminal; <code>frontend/.env.local</code> otomatis diperbarui</td>
 </tr>
 <tr>
