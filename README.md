@@ -933,7 +933,7 @@ Private Key: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
 Buka **Terminal 2** (baru, jangan tutup Terminal 1):
 
 ```bash
-npm run deploy:local
+ npx hardhat run scripts/deploy.js --network localhost   
 ```
 
 Output yang muncul:
